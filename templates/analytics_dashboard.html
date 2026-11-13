@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Network Fault Analytics{% endblock %}
+{% block page_subtitle %}Live statistics computed from the complaint database{% endblock %}
+{% block content %}
+<form class="card mb-4" id="rangeForm">
+  <div class="card-body d-flex flex-wrap gap-2 align-items-end">
+    <div><label class="form-label mb-1" for="from">From</label><input type="date" class="form-control form-control-sm" id="from" name="from"></div>
+    <div><label class="form-label mb-1" for="to">To</label><input type="date" class="form-control form-control-sm" id="to" name="to"></div>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Quick ranges">
+      <button type="button" class="btn btn-outline-secondary" data-days="7">7 days</button>
+      <button type="button" class="btn btn-outline-secondary" data-days="30">30 days</button>
+      <button type="button" class="btn btn-outline-secondary" data-days="0">All time</button>
+    </div>
+    <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+    <span class="ms-auto small text-muted" id="updatedAt"></span>
+  </div>
+</form>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg"><div class="card stat-card"><span class="icon icon-blue"><i class="bi bi-collection"></i></span><div><div class="value" id="kTotal">–</div><div class="label">Total complaints</div></div></div></div>
+  <div class="col-6 col-lg"><div class="card stat-card"><span class="icon icon-green"><i class="bi bi-check2-circle"></i></span><div><div class="value" id="kResolved">–</div><div class="label">Resolved</div></div></div></div>
+  <div class="col-6 col-lg"><div class="card stat-card"><span class="icon icon-amber"><i class="bi bi-exclamation-circle"></i></span><div><div class="value" id="kUnresolved">–</div><div class="label">Unresolved</div></div></div></div>
+  <div class="col-6 col-lg"><div class="card stat-card"><span class="icon icon-red"><i class="bi bi-shield-exclamation"></i></span><div><div class="value" id="kCritical">–</div><div class="label">Critical</div></div></div></div>
+  <div class="col-12 col-lg"><div class="card stat-card"><span class="icon icon-violet"><i class="bi bi-stopwatch"></i></span><div><div class="value" id="kAvg">–</div><div class="label">Avg. resolution time</div></div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-8"><div class="card h-100"><div class="card-header"><i class="bi bi-bar-chart me-2"></i>Complaints by campus zone</div><div class="card-body"><div class="chart-box"><canvas id="zoneChart" aria-label="Complaints by campus zone, resolved and unresolved" role="img"></canvas></div></div></div></div>
+  <div class="col-xl-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart me-2"></i>Fault categories</div><div class="card-body"><div class="chart-box"><canvas id="categoryChart" aria-label="Fault category distribution" role="img"></canvas></div></div></div></div>
+  <div class="col-xl-4"><div class="card h-100"><div class="card-header"><i class="bi bi-flag me-2"></i>Priority distribution</div><div class="card-body"><div class="chart-box"><canvas id="priorityChart" aria-label="Priority distribution" role="img"></canvas></div></div></div></div>
+  <div class="col-xl-4"><div class="card h-100"><div class="card-header"><i class="bi bi-check2-square me-2"></i>Resolved vs unresolved</div><div class="card-body"><div class="chart-box"><canvas id="resolvedChart" aria-label="Resolved versus unresolved complaints" role="img"></canvas></div></div></div></div>
+  <div class="col-xl-4"><div class="card h-100"><div class="card-header"><i class="bi bi-activity me-2"></i>Status breakdown</div><div class="card-body"><div class="chart-box"><canvas id="statusChart" aria-label="Complaints by status" role="img"></canvas></div></div></div></div>
+  <div class="col-12"><div class="card"><div class="card-header"><i class="bi bi-graph-up me-2"></i>Complaints over time</div><div class="card-body"><div class="chart-box"><canvas id="timelineChart" aria-label="Complaints submitted and resolved per day" role="img"></canvas></div></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><i class="bi bi-table me-2"></i>Zone-wise statistics (table view)</div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Zone</th><th>Code</th><th class="text-end">Total</th><th class="text-end">Resolved</th><th class="text-end">Unresolved</th><th class="text-end">Critical</th><th class="text-end">Resolution rate</th></tr></thead>
+      <tbody id="zoneTable"></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

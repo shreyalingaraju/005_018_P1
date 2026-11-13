@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Report a Fault{% endblock %}
+{% block page_title %}Report a Network Fault{% endblock %}
+{% block page_subtitle %}The location identifier is validated by a DFA and a regular expression before the complaint is accepted{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pencil-square me-2"></i>Complaint details</div>
+      <div class="card-body">
+        <div id="formAlert" class="alert alert-danger d-none" role="alert"></div>
+        <form id="complaintForm" novalidate>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="name">Student / Faculty name</label>
+              <input class="form-control" id="name" name="name" value="{{ current_user.name }}" maxlength="80" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="institutional_id">USN or Faculty ID</label>
+              <input class="form-control text-uppercase" id="institutional_id" name="institutional_id" value="{{ current_user.institutional_id }}" maxlength="20" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="device_type">Device type</label>
+              <select class="form-select" id="device_type" name="device_type" required>
+                <option value="">Select…</option>
+                <option value="WIFI">WIFI — Wireless</option>
+                <option value="LAN">LAN — Wired</option>
+              </select>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label" for="location_code">Location code</label>
+              <select class="form-select" id="location_code" name="location_code" required>
+                <option value="">Select…</option>
+                <option value="HOST">HOST — Hostels</option>
+                <option value="LAB">LAB — Laboratories</option>
+                <option value="ADM">ADM — Admin Block</option>
+                <option value="LIB">LIB — Library</option>
+                <option value="CANT">CANT — Canteen</option>
+                <option value="SPRT">SPRT — Sports Complex</option>
+              </select>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" for="floor">Floor</label>
+              <select class="form-select" id="floor" name="floor" required>
+                <option value="">Select…</option>
+                {% for f in range(10) %}<option value="{{ f }}">{{ f }}{% if f == 0 %} (Ground){% endif %}</option>{% endfor %}
+              </select>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="description">Describe the problem</label>
+              <textarea class="form-control" id="description" name="description" rows="4" maxlength="1000" required
+                placeholder="e.g. My WiFi is disconnected and internet is very slow."></textarea>
+              <div class="d-flex justify-content-between"><div class="invalid-feedback d-block"></div><small class="text-muted"><span id="descCount">0</span>/1000</small></div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-4" id="submitBtn"><i class="bi bi-send me-1"></i>Submit complaint</button>
+            <button type="reset" class="btn btn-outline-secondary" id="resetBtn">Clear</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-upc-scan me-2"></i>Generated location identifier</div>
+      <div class="card-body">
+        <div class="identifier-preview mb-3" id="idPreview">—</div>
+        <div class="row text-center g-2" id="livePreview">
+          <div class="col-6"><div class="small text-muted">DFA</div><div id="liveDfa" class="fw-semibold">—</div></div>
+          <div class="col-6"><div class="small text-muted">Regex</div><div id="liveRegex" class="fw-semibold">—</div></div>
+          <div class="col-6"><div class="small text-muted">Detected category</div><div id="liveCat">—</div></div>
+          <div class="col-6"><div class="small text-muted">Priority</div><div id="livePrio">—</div></div>
+        </div>
+        <div class="small text-muted mt-3" id="liveMsg">Select device, location and floor to build the identifier.</div>
+      </div>
+    </div>
+
+    <div class="card d-none" id="resultCard">
+      <div class="card-header d-flex align-items-center"><i class="bi bi-clipboard-check me-2"></i>Submission result</div>
+      <div class="card-body" id="resultBody"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/submit.js') }}"></script>
+{% endblock %}

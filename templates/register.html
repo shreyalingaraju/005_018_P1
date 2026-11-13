@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <section class="auth-panel">
+    <div class="auth-card" style="max-width:520px">
+      <div class="text-center mb-3">
+        <span class="cnw-brand"><span class="logo"><i class="bi bi-broadcast-pin"></i></span></span>
+        <div class="fw-bold mt-2" style="letter-spacing:.08em">{{ app_name }}</div>
+      </div>
+      <div class="card p-4 p-md-5">
+        <h2 class="h4 fw-bold mb-1">Create your account</h2>
+        <p class="text-muted mb-4">For students and faculty. Administrator accounts are issued by the central network team.</p>
+        <div id="regAlert" class="alert alert-danger d-none" role="alert"></div>
+        <form id="regForm" novalidate>
+          <div class="mb-3">
+            <label class="form-label" for="name">Full name</label>
+            <input class="form-control" id="name" name="name" maxlength="80" required>
+            <div class="invalid-feedback"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="institutional_id">USN or Faculty ID</label>
+            <input class="form-control text-uppercase" id="institutional_id" name="institutional_id" maxlength="20" placeholder="e.g. 1RV22CS101 or FAC2041" required>
+            <div class="invalid-feedback"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="email">Email</label>
+            <input class="form-control" type="email" id="email" name="email" autocomplete="username" required>
+            <div class="invalid-feedback"></div>
+          </div>
+          <div class="row">
+            <div class="col-sm-6 mb-3">
+              <label class="form-label" for="password">Password</label>
+              <input class="form-control" type="password" id="password" name="password" autocomplete="new-password" required>
+              <div class="invalid-feedback"></div>
+            </div>
+            <div class="col-sm-6 mb-3">
+              <label class="form-label" for="confirm_password">Confirm password</label>
+              <input class="form-control" type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="form-text mb-3">At least 8 characters with letters and digits.</div>
+          <button class="btn btn-primary w-100 py-2" type="submit" id="regBtn"><i class="bi bi-person-plus me-1"></i>Create account</button>
+        </form>
+        <p class="text-center mt-3 mb-0 small">Already registered? <a href="{{ url_for('auth.login_page') }}">Sign in</a></p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("regForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, alertEl = document.getElementById("regAlert"), btn = document.getElementById("regBtn");
+  f.querySelectorAll(".is-invalid").forEach((el) => el.classList.remove("is-invalid"));
+  alertEl.classList.add("d-none");
+  const data = Object.fromEntries(new FormData(f).entries());
+  const errors = {};
+  if (data.name.trim().length < 2) errors.name = "Enter your full name.";
+  if (!/^[A-Za-z0-9]{3,20}$/.test(data.institutional_id.trim())) errors.institutional_id = "3-20 letters or digits.";
+  if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(data.email.trim())) errors.email = "Enter a valid email.";
+  if (data.password.length < 8 || !/[A-Za-z]/.test(data.password) || !/\d/.test(data.password)) errors.password = "Min 8 chars, letters and digits.";
+  if (data.password !== data.confirm_password) errors.confirm_password = "Passwords do not match.";
+  const show = (errs) => Object.entries(errs).forEach(([k, v]) => {
+    const input = f.querySelector('[name="' + k + '"]');
+    if (input) { input.classList.add("is-invalid"); input.nextElementSibling.textContent = v; }
+  });
+  if (Object.keys(errors).length) { show(errors); return; }
+  btn.disabled = true;
+  try {
+    const res = await CNW.api("POST", "/api/auth/register", data);
+    window.location.href = res.data.redirect;
+  } catch (err) {
+    alertEl.textContent = err.message; alertEl.classList.remove("d-none");
+    if (err.payload && err.payload.details) show(err.payload.details);
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}

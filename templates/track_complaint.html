@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Track Complaint{% endblock %}
+{% block page_title %}Track a Complaint{% endblock %}
+{% block page_subtitle %}Enter a complaint ID to see its status, administrator and full history{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <div class="card mb-4">
+      <div class="card-body">
+        <form id="trackForm" class="row g-2 align-items-end">
+          <div class="col-md">
+            <label class="form-label" for="cid">Complaint ID</label>
+            <input class="form-control form-control-lg mono text-uppercase" id="cid" placeholder="CNFR-YYYYMMDD-XXXXXX" maxlength="40" required>
+          </div>
+          <div class="col-md-auto"><button class="btn btn-primary btn-lg w-100" type="submit"><i class="bi bi-search me-1"></i>Track</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="card d-none" id="trackCard"><div class="card-body" id="trackBody"></div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const input = document.getElementById("cid");
+  async function track(id) {
+    const card = document.getElementById("trackCard"), body = document.getElementById("trackBody");
+    card.classList.remove("d-none");
+    body.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary"></div></div>';
+    try {
+      const res = await CNW.api("GET", "/api/complaints/track/" + encodeURIComponent(id.trim().toUpperCase()));
+      body.innerHTML = CNW.detailHtml(res.data.complaint, res.data.history, res.data.queue);
+      history.replaceState(null, "", "?id=" + encodeURIComponent(res.data.complaint.complaint_id));
+    } catch (e) {
+      body.innerHTML = '<div class="alert alert-' + (e.status === 403 ? "warning" : "danger") + ' mb-0"><i class="bi bi-exclamation-triangle me-1"></i>' + CNW.esc(e.message) + "</div>";
+    }
+  }
+  document.getElementById("trackForm").addEventListener("submit", (e) => { e.preventDefault(); if (input.value.trim()) track(input.value); });
+  const initial = new URLSearchParams(location.search).get("id");
+  if (initial) { input.value = initial; track(initial); }
+})();
+</script>
+{% endblock %}

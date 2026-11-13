@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block page_subtitle %}Welcome, {{ current_user.name }} — your network complaints and their live status{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('user.submit_page') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">Report a fault</span></a>
+{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl"><div class="card stat-card"><span class="icon icon-blue"><i class="bi bi-collection"></i></span><div><div class="value" id="sTotal">–</div><div class="label">Total</div></div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card stat-card"><span class="icon icon-amber"><i class="bi bi-hourglass-split"></i></span><div><div class="value" id="sPending">–</div><div class="label">Pending</div></div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card stat-card"><span class="icon icon-slate"><i class="bi bi-person-check"></i></span><div><div class="value" id="sAssigned">–</div><div class="label">Assigned</div></div></div></div>
+  <div class="col-6 col-md-6 col-xl"><div class="card stat-card"><span class="icon icon-violet"><i class="bi bi-tools"></i></span><div><div class="value" id="sProgress">–</div><div class="label">In Progress</div></div></div></div>
+  <div class="col-12 col-md-6 col-xl"><div class="card stat-card"><span class="icon icon-green"><i class="bi bi-check2-circle"></i></span><div><div class="value" id="sResolved">–</div><div class="label">Resolved</div></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <span class="me-auto"><i class="bi bi-list-task me-2"></i>My complaints</span>
+    <form class="d-flex flex-wrap gap-2" id="filterForm" role="search">
+      <input class="form-control form-control-sm" style="width:200px" name="q" placeholder="Search complaint ID…" aria-label="Search by complaint ID">
+      <select class="form-select form-select-sm" style="width:140px" name="status" aria-label="Filter by status">
+        <option value="">All statuses</option><option>Pending</option><option>Assigned</option><option>In Progress</option><option>Resolved</option>
+      </select>
+      <select class="form-select form-select-sm" style="width:150px" name="category" aria-label="Filter by category">
+        <option value="">All categories</option><option>Connectivity</option><option>Hardware</option><option>Configuration</option><option>Security</option><option>Unknown</option>
+      </select>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>Complaint ID</th><th>Campus location</th><th>Device</th><th>Category</th><th>Priority</th><th>Status</th><th>Administrator</th><th>Submitted</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="8" class="text-center p-4"><div class="spinner-border text-primary"></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

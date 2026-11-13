@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ 'All Complaints' if current_user.role == 'central_admin' else 'Administrator Dashboard' }}{% endblock %}
+{% block page_title %}{{ 'All Complaints' if current_user.role == 'central_admin' else 'Network Administrator Dashboard' }}{% endblock %}
+{% block page_subtitle %}{% if current_admin %}{{ current_admin.name }} · {{ current_admin.admin_code }} · zone {{ current_admin.assigned_zone }}{% endif %}{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="d-flex align-items-center mb-2">
+          <span class="fw-semibold"><i class="bi bi-person-badge me-2 text-primary"></i>My availability</span>
+          <span class="ms-auto" id="availBadge"></span>
+        </div>
+        <p class="small text-muted mb-3">When you are <strong>Busy</strong>, new complaints for your zone go to the backup administrator or the waiting queue. Switching to <strong>Available</strong> automatically pulls waiting complaints (highest priority first).</p>
+        <div class="btn-group mt-auto" role="group" aria-label="Availability">
+          <input type="radio" class="btn-check" name="avail" id="availOn" value="Available" autocomplete="off">
+          <label class="btn btn-outline-success" for="availOn"><i class="bi bi-check-circle me-1"></i>Available</label>
+          <input type="radio" class="btn-check" name="avail" id="availOff" value="Busy" autocomplete="off">
+          <label class="btn btn-outline-danger" for="availOff"><i class="bi bi-slash-circle me-1"></i>Busy</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="row g-3 h-100">
+      <div class="col-6 col-md-3"><div class="card stat-card"><span class="icon icon-blue"><i class="bi bi-inbox"></i></span><div><div class="value" id="sAssigned">–</div><div class="label">Assigned</div></div></div></div>
+      <div class="col-6 col-md-3"><div class="card stat-card"><span class="icon icon-violet"><i class="bi bi-tools"></i></span><div><div class="value" id="sProgress">–</div><div class="label">In Progress</div></div></div></div>
+      <div class="col-6 col-md-3"><div class="card stat-card"><span class="icon icon-green"><i class="bi bi-check2-circle"></i></span><div><div class="value" id="sResolved">–</div><div class="label">Resolved</div></div></div></div>
+      <div class="col-6 col-md-3"><div class="card stat-card"><span class="icon icon-amber"><i class="bi bi-hourglass-split"></i></span><div><div class="value" id="sWaiting">–</div><div class="label">Zone queue</div></div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <span class="me-auto"><i class="bi bi-kanban me-2"></i>{{ 'All complaints (central view)' if current_user.role == 'central_admin' else 'Complaints assigned to me' }}</span>
+    {% if current_user.role == 'central_admin' %}
+    <div class="form-check form-switch me-2">
+      <input class="form-check-input" type="checkbox" id="onlyMine">
+      <label class="form-check-label small" for="onlyMine">Only assigned to me</label>
+    </div>
+    {% endif %}
+    <select class="form-select form-select-sm" style="width:140px" id="fStatus" aria-label="Filter by status">
+      <option value="">All statuses</option><option>Pending</option><option>Assigned</option><option>In Progress</option><option>Resolved</option>
+    </select>
+    <select class="form-select form-select-sm" style="width:130px" id="fPriority" aria-label="Filter by priority">
+      <option value="">All priorities</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>Complaint ID</th><th>User</th><th>Zone / Identifier</th><th>Description</th><th>Category</th><th>Priority</th><th>Submitted</th><th>Status</th>{% if current_user.role == 'central_admin' %}<th>Administrator</th>{% endif %}<th class="text-end">Actions</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="10" class="text-center p-4"><div class="spinner-border text-primary"></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Status update confirmation -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="statusModalLabel">Update status</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <p class="mb-2">Change <strong class="mono" id="smId"></strong> to <span id="smStatus"></span>?</p>
+      <label class="form-label" for="smRemarks">Remarks (optional)</label>
+      <textarea class="form-control" id="smRemarks" rows="2" maxlength="500" placeholder="e.g. Replaced faulty patch cable."></textarea>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="smConfirm">Confirm</button></div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  window.CNW_ADMIN = { adminId: {{ current_admin.id if current_admin else 'null' }}, isCentral: {{ 'true' if current_user.role == 'central_admin' else 'false' }}, zone: {{ (current_admin.assigned_zone if current_admin else '')|tojson }} };
+</script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Routing Management{% endblock %}
+{% block page_title %}Routing Management{% endblock %}
+{% block page_subtitle %}Campus routing table, administrator availability and the priority waiting queue{% endblock %}
+{% block topbar_actions %}
+<button class="btn btn-outline-primary btn-sm" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i><span class="d-none d-sm-inline ms-1">Refresh</span></button>
+{% endblock %}
+{% block content %}
+<h2 class="h6 fw-bold text-uppercase text-muted mb-3" style="letter-spacing:.06em">Campus zones</h2>
+<div class="row g-3 mb-4" id="zoneCards"></div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xxl-7">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center"><i class="bi bi-table me-2"></i>Live routing table<span class="ms-auto small text-muted fw-normal">Prefix → next hop (primary) → fallback (backup)</span></div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Prefix</th><th>Campus zone</th><th>Primary administrator</th><th>Backup administrator</th><th>Updated</th><th></th></tr></thead>
+          <tbody id="routingRows"></tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-transparent small text-muted"><i class="bi bi-info-circle me-1"></i>Unregistered prefixes are forwarded to <strong>Central_Admin</strong>.</div>
+    </div>
+  </div>
+  <div class="col-xxl-5">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center"><i class="bi bi-hourglass-split me-2"></i>Waiting queue <span class="badge b-pending ms-2" id="queueCount">0</span>
+        <button class="btn btn-sm btn-primary ms-auto" id="processQueueBtn"><i class="bi bi-play-circle me-1"></i>Process queue</button></div>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>#</th><th>Complaint</th><th>Zone</th><th>Priority</th><th>Queued</th><th></th></tr></thead>
+          <tbody id="queueRows"></tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-transparent small text-muted">Order: Critical → High → Medium → Low, FIFO within the same priority.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header d-flex align-items-center flex-wrap gap-2"><i class="bi bi-people me-1"></i>Administrator availability
+    <button class="btn btn-sm btn-outline-primary ms-auto" data-bs-toggle="modal" data-bs-target="#addAdminModal"><i class="bi bi-person-plus me-1"></i>Add administrator</button></div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Administrator</th><th>Code</th><th>Zone</th><th>Role</th><th>Open</th><th>Resolved</th><th>Availability</th><th>Active</th><th class="text-end">Actions</th></tr></thead>
+      <tbody id="adminRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-5">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-arrow-left-right me-2"></i>Reassign a complaint</div>
+      <div class="card-body">
+        <form id="reassignForm" class="row g-2">
+          <div class="col-12"><label class="form-label" for="raId">Complaint ID</label><input class="form-control mono text-uppercase" id="raId" placeholder="CNFR-…" required></div>
+          <div class="col-12"><label class="form-label" for="raAdmin">New administrator</label><select class="form-select" id="raAdmin" required></select></div>
+          <div class="col-12"><label class="form-label" for="raRemarks">Reason</label><input class="form-control" id="raRemarks" maxlength="300" placeholder="e.g. Specialist required"></div>
+          <div class="col-12"><button class="btn btn-primary" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Reassign</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-7">
+    <div class="card h-100">
+      <div class="card-header p-0 border-0">
+        <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+          <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabHistory" type="button" role="tab">Reassignment &amp; routing history</button></li>
+          <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAudit" type="button" role="tab">Audit log</button></li>
+        </ul>
+      </div>
+      <div class="tab-content" style="max-height:360px;overflow-y:auto">
+        <div class="tab-pane fade show active" id="tabHistory" role="tabpanel"><table class="table table-sm"><tbody id="historyRows"></tbody></table></div>
+        <div class="tab-pane fade" id="tabAudit" role="tabpanel"><table class="table table-sm"><tbody id="auditRows"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit routing entry -->
+<div class="modal fade" id="routeModal" tabindex="-1" aria-labelledby="routeModalLabel" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="routeModalLabel">Edit routing entry <span class="zone-code mono" id="rmCode"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <div class="mb-3"><label class="form-label" for="rmPrimary">Primary administrator</label><select class="form-select" id="rmPrimary"></select></div>
+      <div class="mb-1"><label class="form-label" for="rmBackup">Backup administrator</label><select class="form-select" id="rmBackup"></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="rmSave">Save mapping</button></div>
+  </div></div>
+</div>
+
+<!-- Edit administrator -->
+<div class="modal fade" id="editAdminModal" tabindex="-1" aria-labelledby="editAdminLabel" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="editAdminLabel">Edit administrator <span class="mono small" id="eaCode"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <div class="mb-3"><label class="form-label" for="eaName">Display name</label><input class="form-control" id="eaName" maxlength="80"></div>
+      <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="eaActive"><label class="form-check-label" for="eaActive">Active (eligible for routing)</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="eaSave">Save</button></div>
+  </div></div>
+</div>
+
+<!-- Add administrator -->
+<div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminLabel" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="addAdminLabel">Add network administrator</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <form id="addAdminForm" novalidate>
+      <div class="modal-body row g-2">
+        <div class="col-12 alert alert-danger d-none" id="aaAlert"></div>
+        <div class="col-md-6"><label class="form-label" for="aaName">Name</label><input class="form-control" id="aaName" name="name" required></div>
+        <div class="col-md-6"><label class="form-label" for="aaInst">Staff ID</label><input class="form-control text-uppercase" id="aaInst" name="institutional_id" required></div>
+        <div class="col-12"><label class="form-label" for="aaEmail">Email</label><input class="form-control" type="email" id="aaEmail" name="email" required></div>
+        <div class="col-md-6"><label class="form-label" for="aaPw">Initial password</label><input class="form-control" type="password" id="aaPw" name="password" autocomplete="new-password" required></div>
+        <div class="col-md-3"><label class="form-label" for="aaZone">Zone</label><select class="form-select" id="aaZone" name="assigned_zone"></select></div>
+        <div class="col-md-3"><label class="form-label" for="aaRole">Role</label><select class="form-select" id="aaRole" name="admin_role"><option value="backup">Backup</option><option value="primary">Primary</option></select></div>
+        <div class="col-12 small text-muted">New administrators are not routed to until mapped in the routing table.</div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="submit">Create</button></div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/routing.js') }}"></script>
+{% endblock %}

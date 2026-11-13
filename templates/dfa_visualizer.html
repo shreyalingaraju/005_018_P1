@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Technical Overview{% endblock %}
+{% block page_title %}Technical Overview{% endblock %}
+{% block page_subtitle %}BCS503 Automata Theory + BCS502 Computer Networks — how the system really works{% endblock %}
+{% block content %}
+<ul class="nav nav-pills mb-3 flex-wrap gap-1" role="tablist">
+  <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pDfa" type="button" role="tab"><i class="bi bi-diagram-2 me-1"></i>A. DFA Visualizer</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pRegex" type="button" role="tab"><i class="bi bi-regex me-1"></i>B. Regex &amp; Comparison</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pClass" type="button" role="tab"><i class="bi bi-tags me-1"></i>C. Classification Engine</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pRoute" type="button" role="tab"><i class="bi bi-signpost-split me-1"></i>D. Routing Process</button></li>
+</ul>
+
+<div class="tab-content">
+  <!-- A. DFA -->
+  <div class="tab-pane fade show active" id="pDfa" role="tabpanel">
+    <div class="card mb-4">
+      <div class="card-header d-flex flex-wrap gap-2 align-items-center"><span class="me-auto"><i class="bi bi-diagram-2 me-2"></i>Deterministic Finite Automaton M = (Q, Σ, δ, q0, F)</span>
+        <span class="small text-muted fw-normal">Q = 32 states · F = {q30} · dead state qD</span></div>
+      <div class="card-body">
+        <form id="dfaForm" class="row g-2 align-items-end mb-3">
+          <div class="col-md-5">
+            <label class="form-label" for="dfaInput">Identifier</label>
+            <input class="form-control mono" id="dfaInput" value="WIFI-HOST-2" maxlength="40" autocomplete="off">
+          </div>
+          <div class="col-md-auto d-flex gap-1 flex-wrap">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-play-fill me-1"></i>Run</button>
+            <button class="btn btn-outline-primary" type="button" id="stepBtn"><i class="bi bi-skip-forward me-1"></i>Step</button>
+            <button class="btn btn-outline-secondary" type="button" id="resetBtn"><i class="bi bi-arrow-counterclockwise"></i><span class="visually-hidden">Reset</span></button>
+          </div>
+          <div class="col-12 d-flex flex-wrap gap-1" id="samples"></div>
+        </form>
+        <div class="dfa-canvas mb-3"><svg id="dfaSvg" role="img" aria-label="DFA state diagram"></svg></div>
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="small text-muted mb-1">Input tape</div>
+            <div class="tape mb-3" id="tape"></div>
+            <div id="dfaStatus" class="alert alert-secondary mb-0">Press <strong>Run</strong> to animate, or <strong>Step</strong> to move one character at a time.</div>
+          </div>
+          <div class="col-lg-6">
+            <div class="small text-muted mb-1">Transition trace δ(q, a)</div>
+            <div style="max-height:220px;overflow-y:auto" class="border rounded">
+              <table class="table table-sm mb-0"><thead><tr><th>#</th><th>State</th><th>Read</th><th>Next state</th></tr></thead><tbody id="traceRows"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Transition table (every missing entry → qD)</div>
+      <div class="table-responsive" style="max-height:420px"><table class="table table-sm"><thead><tr><th>State</th><th>Meaning</th><th>Transitions</th><th>Type</th></tr></thead><tbody id="ttRows"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- B. Regex -->
+  <div class="tab-pane fade" id="pRegex" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-xl-5">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-regex me-2"></i>Equivalent regular expression</div>
+          <div class="card-body">
+            <div class="identifier-preview mb-3" style="font-size:1rem" id="regexPattern"></div>
+            <ul class="small mb-3">
+              <li><code>^ … $</code> + <code>re.fullmatch</code> — the whole string must match (no substring search).</li>
+              <li><code>(WIFI|LAN)</code> — device type (union).</li>
+              <li><code>-</code> — literal separator (concatenation).</li>
+              <li><code>(HOST|LAB|ADM|LIB|CANT|SPRT)</code> — campus location prefix.</li>
+              <li><code>[0-9]</code> — exactly one floor digit.</li>
+            </ul>
+            <form id="regexForm" class="input-group">
+              <input class="form-control mono" id="regexInput" value="LAN-LAB-12" aria-label="Identifier to test">
+              <button class="btn btn-primary" type="submit">Test</button>
+            </form>
+            <div id="regexResult" class="mt-3"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-7">
+        <div class="card h-100">
+          <div class="card-header d-flex align-items-center"><i class="bi bi-arrow-left-right me-2"></i>DFA vs Regex comparison <span class="ms-auto" id="agreeBadge"></span></div>
+          <div class="card-body pb-0">
+            <form id="compareForm" class="input-group mb-2">
+              <input class="form-control mono" id="compareInput" placeholder="Add identifier to the table…" aria-label="Identifier to compare">
+              <button class="btn btn-outline-primary" type="submit"><i class="bi bi-plus"></i> Add</button>
+            </form>
+          </div>
+          <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Identifier</th><th>DFA</th><th>Final state</th><th>Regex</th><th>Match</th><th>Message</th></tr></thead><tbody id="compareRows"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C. Classification -->
+  <div class="tab-pane fade" id="pClass" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-xl-6">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-tags me-2"></i>Try the classifier</div>
+          <div class="card-body">
+            <textarea class="form-control mb-2" id="classText" rows="3" aria-label="Complaint text">My WiFi is disconnected and someone attempted unauthorized access.</textarea>
+            <div class="d-flex flex-wrap gap-1 mb-3" id="classSamples"></div>
+            <button class="btn btn-primary" id="classBtn"><i class="bi bi-cpu me-1"></i>Classify</button>
+            <div id="classResult" class="mt-3"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-6">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-list-ol me-2"></i>Keyword dictionary &amp; precedence</div>
+          <div class="card-body" id="keywordBox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D. Routing -->
+  <div class="tab-pane fade" id="pRoute" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-signpost-split me-2"></i>Routing decision (live dry-run against the database)</div>
+      <div class="card-body">
+        <p class="small text-muted">Complaint → Zone lookup → Primary admin → Availability check → Backup admin → Assignment / Waiting queue. Nothing is written — this shows which administrator the backend would select right now.</p>
+        <form id="routeForm" class="row g-2 mb-3">
+          <div class="col-md-4"><input class="form-control mono" id="routeInput" value="WIFI-HOST-2" aria-label="Identifier to route"></div>
+          <div class="col-md-auto"><button class="btn btn-primary" type="submit"><i class="bi bi-signpost me-1"></i>Trace route</button></div>
+        </form>
+        <div id="routeResult"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dfa.js') }}"></script>
+{% endblock %}

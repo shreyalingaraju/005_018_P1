@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <section class="auth-hero">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-5">
+        <span class="cnw-brand"><span class="logo"><i class="bi bi-broadcast-pin"></i></span></span>
+        <span class="fw-bold" style="letter-spacing:.08em">{{ app_name }}</span>
+      </div>
+      <h1 class="mb-3">{{ app_name }}</h1>
+      <p class="lead mb-5" style="color:#c8d3e6;max-width:520px">{{ app_tagline }}</p>
+      <div class="feature"><i class="bi bi-diagram-2"></i><div><strong class="text-white">DFA + Regex validation</strong><br>Every location identifier is verified by a finite automaton and an equivalent regular expression.</div></div>
+      <div class="feature"><i class="bi bi-tags"></i><div><strong class="text-white">Automatic fault classification</strong><br>Connectivity, hardware, configuration and security issues are detected and prioritised.</div></div>
+      <div class="feature"><i class="bi bi-signpost-split"></i><div><strong class="text-white">Intelligent routing</strong><br>Six-zone routing table with primary/backup administrators and a priority waiting queue.</div></div>
+    </div>
+    <div class="small" style="color:#6f82a3">Hostels · Laboratories · Admin Block · Library · Canteen · Sports Complex</div>
+    <i class="bi bi-router net-bg"></i>
+  </section>
+
+  <section class="auth-panel">
+    <div class="auth-card">
+      <div class="card p-4 p-md-5">
+        <h2 class="h4 fw-bold mb-1">Sign in</h2>
+        <p class="text-muted mb-4">Report and track campus network faults.</p>
+        <div id="loginAlert" class="alert alert-danger d-none" role="alert"></div>
+        <form id="loginForm" novalidate>
+          <input type="hidden" name="next" value="{{ next or '' }}">
+          <div class="mb-3">
+            <label class="form-label" for="email">Email</label>
+            <input class="form-control" type="email" id="email" name="email" autocomplete="username" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-control" type="password" id="password" name="password" autocomplete="current-password" required>
+          </div>
+          <button class="btn btn-primary w-100 py-2" type="submit" id="loginBtn"><i class="bi bi-box-arrow-in-right me-1"></i>Sign in</button>
+        </form>
+        <p class="text-center mt-3 mb-0 small">New student or faculty member? <a href="{{ url_for('auth.register_page') }}">Create an account</a></p>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header small"><i class="bi bi-key me-1"></i>Demo accounts <span class="text-muted fw-normal">(click to fill)</span></div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item demo-cred" data-email="student@campus.edu" data-pw="Student@123"><strong>Student</strong> · student@campus.edu · Student@123</div>
+          <div class="list-group-item demo-cred" data-email="admin.host@campus.edu" data-pw="Admin@123"><strong>Network Admin (Hostels)</strong> · admin.host@campus.edu · Admin@123</div>
+          <div class="list-group-item demo-cred" data-email="backup.host@campus.edu" data-pw="Admin@123"><strong>Backup Admin (Hostels)</strong> · backup.host@campus.edu · Admin@123</div>
+          <div class="list-group-item demo-cred" data-email="central@campus.edu" data-pw="Central@123"><strong>Central Admin</strong> · central@campus.edu · Central@123</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll(".demo-cred").forEach((el) => el.addEventListener("click", () => {
+  document.getElementById("email").value = el.dataset.email;
+  document.getElementById("password").value = el.dataset.pw;
+}));
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, alertEl = document.getElementById("loginAlert"), btn = document.getElementById("loginBtn");
+  alertEl.classList.add("d-none");
+  if (!f.email.value || !f.password.value) { alertEl.textContent = "Email and password are required."; alertEl.classList.remove("d-none"); return; }
+  btn.disabled = true;
+  try {
+    const res = await CNW.api("POST", "/api/auth/login", { email: f.email.value, password: f.password.value, next: f.next.value });
+    window.location.href = res.data.redirect;
+  } catch (err) {
+    alertEl.textContent = err.message; alertEl.classList.remove("d-none"); btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}
